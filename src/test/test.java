@@ -1,5 +1,5 @@
-package test
-public class test
+package TableReady;
+public class Table
 {
     //~ Fields ................................................................
 
