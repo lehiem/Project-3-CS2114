@@ -1,5 +1,5 @@
-package tableReady;
-public class TextView
+package tableReady.model;
+public class Waitlist
 {
     //~ Fields ................................................................
 

@@ -1,5 +1,5 @@
-package TableReady;
-public class Table
+package tableReady.model;
+public class LinkedQueue<T>
 {
     //~ Fields ................................................................
 

@@ -1,5 +1,5 @@
-package tableReady;
-public class LinkedQueue<T>
+package tableReady.view;
+public class GuiView
 {
     //~ Fields ................................................................
 

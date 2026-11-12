@@ -1,5 +1,5 @@
-package tableReady;
-public class GuiController
+package tableReady.view;
+public class TextView
 {
     //~ Fields ................................................................
 

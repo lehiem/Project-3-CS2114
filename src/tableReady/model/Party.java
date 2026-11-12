@@ -1,4 +1,4 @@
-package tableReady;
+package tableReady.model;
 public class Party
 {
     //~ Fields ................................................................

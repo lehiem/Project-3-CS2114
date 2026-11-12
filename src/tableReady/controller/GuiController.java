@@ -1,5 +1,5 @@
-package tableReady;
-public class WaitlistController
+package tableReady.controller;
+public class GuiController
 {
     //~ Fields ................................................................
 
