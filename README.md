@@ -137,7 +137,7 @@ We aren't dropping any of the stretch goals from our scope.
 | `WaitlistController.java` | Lehiem, Kavin | Lehiem wrote it. Kavin replaced the template class comment with a real summary. |
 | `GuiView.java` | Lehiem, Kavin | Lehiem wrote it. Kavin added `promptNewName`, `promptNewSize` and `confirmSeat` to move the pop-ups out of `GuiController`. |
 | `GuiController.java` | Lehiem, Kavin | Lehiem wrote it. Kavin changed its three pop-up calls to use the new `GuiView` methods and removed its `JOptionPane` import. |
-| `LinkedQueueTest.java` | Harrison | Wrote all 27 tests |
+| `LinkedQueueTest.java` | Harrison | Wrote all 27 tests. Kavin reviewed it and fixed one test. |
 | `PartyTest.java` | Harrison | Wrote all 20 tests |
 | `WaitlistTest.java` | Kavin | Kavin wrote it from our spec's test plan. Kavin reviewed it with the spec and ran it. |
 
