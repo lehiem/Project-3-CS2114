@@ -145,7 +145,7 @@ We aren't dropping any of the stretch goals from our scope.
 
 We used Claude for this prototype:
 
-- **Planning:** we gave it our spec and the Deliverable 3 instructions and rubric, and asked if our plan to build and divinsion of work would work properly and made sense.
+- **Planning:** we gave it our spec and the Deliverable 3 instructions and rubric, and asked if our plan to build and division of work would work properly and made sense.
 - **Project setup:** it walked us through adding a `.gitignore` so compiled `bin/` files stay out of GitHub.
 - **Skeletons:** it helped make sure compile-ready skeletons of the MVP classes with our spec's exact signatures and empty methods. We committed the `LinkedQueue` and `Party` skeletons so `Waitlist` could compile before Harrison's versions were ready.
 - **`Waitlist` and `WaitlistTest`:** it checked them by running the tests against working stand-in versions of `LinkedQueue` and `Party`, which we did not commit, and against `Waitlist` with bugs added on purpose, which the tests caught. Kavin reviewed both files and ran `WaitlistTest` on Harrison's code; all 29 tests pass.
