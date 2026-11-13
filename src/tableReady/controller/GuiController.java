@@ -1,6 +1,5 @@
 package tableReady.controller;
 
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import tableReady.model.Party;
@@ -159,11 +158,7 @@ public class GuiController {
         Party current =
             waitlist.getParties()[position - 1];
 
-        String newName = JOptionPane.showInputDialog(
-            view,
-            "Enter the new party name:",
-            current.getName()
-        );
+        String newName = view.promptNewName(current.getName());
 
         if (newName == null) {
             return;
@@ -178,11 +173,7 @@ public class GuiController {
             return;
         }
 
-        String sizeInput = JOptionPane.showInputDialog(
-            view,
-            "Enter the new party size:",
-            Integer.toString(current.getSize())
-        );
+        String sizeInput = view.promptNewSize(current.getSize());
 
         if (sizeInput == null) {
             return;
@@ -254,15 +245,7 @@ public class GuiController {
 
         Party next = waitlist.peekNext();
 
-        int choice = JOptionPane.showConfirmDialog(
-            view,
-            "Seat " + next.getName()
-                + " (party of " + next.getSize() + ")?",
-            "Seat Next Party",
-            JOptionPane.YES_NO_OPTION
-        );
-
-        if (choice != JOptionPane.YES_OPTION) {
+        if (!view.confirmSeat(next)) {
             return;
         }
 

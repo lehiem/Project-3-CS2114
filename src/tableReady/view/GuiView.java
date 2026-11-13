@@ -1,4 +1,3 @@
-
 package tableReady.view;
 
 import java.awt.BorderLayout;
@@ -512,6 +511,52 @@ public class GuiView extends JFrame {
         );
 
         return result == JOptionPane.YES_OPTION;
+    }
+
+    /**
+     * Asks for a party's new name.
+     *
+     * @param current the current name, shown as the default
+     * @return the text typed, or null if the host cancels
+     */
+    public String promptNewName(String current) {
+        return JOptionPane.showInputDialog(
+            this,
+            "Enter the new party name:",
+            current
+        );
+    }
+
+    /**
+     * Asks for a party's new size.
+     *
+     * @param current the current size, shown as the default
+     * @return the text typed, or null if the host cancels
+     */
+    public String promptNewSize(int current) {
+        return JOptionPane.showInputDialog(
+            this,
+            "Enter the new party size:",
+            Integer.toString(current)
+        );
+    }
+
+    /**
+     * Asks the host to confirm seating the next party.
+     *
+     * @param next the party at the front of the line
+     * @return true if the host clicks Yes
+     */
+    public boolean confirmSeat(Party next) {
+        int choice = JOptionPane.showConfirmDialog(
+            this,
+            "Seat " + next.getName()
+                + " (party of " + next.getSize() + ")?",
+            "Seat Next Party",
+            JOptionPane.YES_NO_OPTION
+        );
+
+        return choice == JOptionPane.YES_OPTION;
     }
 
     public boolean confirmExit() {
