@@ -238,8 +238,8 @@ public class LinkedQueueTest extends student.TestCase {
         LinkedQueue<Long> waits = new LinkedQueue<>();
         waits.enqueue(10L);
         waits.enqueue(20L);
-        assertEquals(Long.valueOf(10L), waits.dequeue());
-        assertEquals(Long.valueOf(20L), waits.peek());
+        assertEquals(10L, waits.dequeue().longValue());
+        assertEquals(20L, waits.peek().longValue());
         assertEquals(1, waits.size());
     }
 }
