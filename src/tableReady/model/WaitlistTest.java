@@ -4,10 +4,22 @@ import java.util.NoSuchElementException;
 
 public class WaitlistTest extends student.TestCase {
 
+    private static final long START = 1000000L;
+    private static final long ONE_MINUTE = 60L * 1000L;
+
     private Waitlist waitlist;
+    private long[] now;
+    private Waitlist timed;
 
     public void setUp() {
         waitlist = new Waitlist();
+        now = new long[] {START};
+        timed = new Waitlist(() -> now[0]);
+    }
+
+    // Moves the fake clock forward.
+    private void advanceMinutes(int minutes) {
+        now[0] += minutes * ONE_MINUTE;
     }
 
     // Runs the action and returns the exception it threw, or null if none.
@@ -249,5 +261,121 @@ public class WaitlistTest extends student.TestCase {
         assertNull(thrown);
         assertEquals(0, waitlist.size());
         assertEquals(0, waitlist.getSeatedCount());
+    }
+
+    // ----- Waitlist(LongSupplier) -----
+
+    public void testClockConstructorStartsEmpty() {
+        assertTrue(timed.isEmpty());
+        assertEquals(0, timed.getSeatedCount());
+    }
+
+    public void testClockConstructorRejectsNull() {
+        Exception thrown = thrownBy(() -> new Waitlist(null));
+        assertTrue(thrown instanceof IllegalArgumentException);
+    }
+
+    // ----- markNoShow -----
+
+    public void testMarkNoShowMovesFrontPartyToBack() {
+        timed.addParty("Patel", 4);
+        timed.addParty("Lee", 2);
+        timed.addParty("Kim", 3);
+        assertTrue(timed.markNoShow());
+        Party[] parties = timed.getParties();
+        assertEquals("Lee", parties[0].getName());
+        assertEquals("Kim", parties[1].getName());
+        assertEquals("Patel", parties[2].getName());
+        assertTrue(parties[2].hasMissed());
+        assertEquals(START, parties[2].getMissedAt());
+        assertEquals(0, timed.getSeatedCount());
+    }
+
+    public void testMarkNoShowSecondMissRemovesParty() {
+        timed.addParty("Patel", 4);
+        timed.addParty("Lee", 2);
+        assertTrue(timed.markNoShow());
+        assertTrue(timed.markNoShow());
+        assertFalse(timed.markNoShow());
+        assertEquals(1, timed.size());
+        assertEquals(-1, timed.positionOf("Patel"));
+        assertEquals("Lee", timed.peekNext().getName());
+    }
+
+    public void testMarkNoShowWithOnlyOneParty() {
+        timed.addParty("Patel", 4);
+        assertTrue(timed.markNoShow());
+        assertEquals(1, timed.size());
+        assertTrue(timed.peekNext().hasMissed());
+        assertFalse(timed.markNoShow());
+        assertTrue(timed.isEmpty());
+    }
+
+    public void testMarkNoShowWhenEmptyThrows() {
+        Exception thrown = thrownBy(() -> timed.markNoShow());
+        assertTrue(thrown instanceof NoSuchElementException);
+        assertEquals(0, timed.size());
+    }
+
+    // ----- removeExpiredNoShows -----
+
+    public void testRemoveExpiredNoShowsAtLimit() {
+        timed.addParty("Patel", 4);
+        timed.addParty("Lee", 2);
+        timed.addParty("Kim", 3);
+        timed.markNoShow();
+        advanceMinutes(Waitlist.NO_SHOW_LIMIT_MINUTES);
+        assertEquals(1, timed.removeExpiredNoShows());
+        Party[] parties = timed.getParties();
+        assertEquals(2, parties.length);
+        assertEquals("Lee", parties[0].getName());
+        assertEquals("Kim", parties[1].getName());
+    }
+
+    public void testRemoveExpiredNoShowsKeepsPartyBeforeLimit() {
+        timed.addParty("Patel", 4);
+        timed.addParty("Lee", 2);
+        timed.markNoShow();
+        advanceMinutes(Waitlist.NO_SHOW_LIMIT_MINUTES - 1);
+        assertEquals(0, timed.removeExpiredNoShows());
+        Party[] parties = timed.getParties();
+        assertEquals("Lee", parties[0].getName());
+        assertEquals("Patel", parties[1].getName());
+    }
+
+    public void testRemoveExpiredNoShowsIgnoresPartiesThatNeverMissed() {
+        timed.addParty("Patel", 4);
+        timed.addParty("Lee", 2);
+        advanceMinutes(120);
+        assertEquals(0, timed.removeExpiredNoShows());
+        assertEquals(2, timed.size());
+    }
+
+    public void testRemoveExpiredNoShowsWhenEmpty() {
+        advanceMinutes(Waitlist.NO_SHOW_LIMIT_MINUTES);
+        assertEquals(0, timed.removeExpiredNoShows());
+        assertTrue(timed.isEmpty());
+    }
+
+    // ----- editParty with no-shows -----
+
+    public void testEditPartyKeepsMissMark() {
+        timed.addParty("Patel", 4);
+        timed.addParty("Lee", 2);
+        timed.markNoShow();
+        assertTrue(timed.editParty("Patel", "Smith", 5));
+        Party changed = timed.getParties()[1];
+        assertEquals("Smith", changed.getName());
+        assertTrue(changed.hasMissed());
+        assertEquals(START, changed.getMissedAt());
+        advanceMinutes(Waitlist.NO_SHOW_LIMIT_MINUTES);
+        assertEquals(1, timed.removeExpiredNoShows());
+        assertEquals(-1, timed.positionOf("Smith"));
+    }
+
+    public void testEditPartyLeavesUnmarkedPartyUnmarked() {
+        timed.addParty("Patel", 4);
+        assertTrue(timed.editParty("Patel", "Smith", 5));
+        assertFalse(timed.peekNext().hasMissed());
     }
 }

@@ -37,6 +37,27 @@ public class Party {
         this.size = size;
     }
 
+    // TODO: real no-show versions
+    public Party(String name, int size, long arrivalTime, long missedAt) {
+        this(name, size);
+    }
+
+    public long getArrivalTime() {
+        return 0;
+    }
+
+    public long getMissedAt() {
+        return -1;
+    }
+
+    public boolean hasMissed() {
+        return false;
+    }
+
+    public Party withMissedAt(long time) {
+        return this;
+    }
+    
     /**
      * @return the trimmed name
      */

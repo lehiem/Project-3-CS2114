@@ -1,19 +1,31 @@
 package tableReady.model;
- 
+
 import java.util.NoSuchElementException;
- 
+import java.util.function.LongSupplier;
+
 public class Waitlist {
- 
+
     private static final int MAX_PARTIES = 50;
- 
+    public static final int NO_SHOW_LIMIT_MINUTES = 15;
+    private static final long MILLIS_PER_MINUTE = 60L * 1000L;
+
     private final LinkedQueue<Party> line;
+    private final LongSupplier clock;
     private int seatedCount;
- 
+
     public Waitlist() {
+        this(System::currentTimeMillis);
+    }
+
+    public Waitlist(LongSupplier clock) {
+        if (clock == null) {
+            throw new IllegalArgumentException("Clock can't be null.");
+        }
+        this.clock = clock;
         line = new LinkedQueue<>();
         seatedCount = 0;
     }
- 
+
     public boolean addParty(String name, int size) {
         if (!Party.isValidName(name) || !Party.isValidSize(size)) {
             return false;
@@ -24,7 +36,7 @@ public class Waitlist {
         line.enqueue(new Party(name, size));
         return true;
     }
- 
+
     public boolean editParty(String currentName, String newName, int newSize) {
         int position = positionOf(currentName);
         if (position == -1) {
@@ -37,13 +49,15 @@ public class Waitlist {
         if (newNamePosition != -1 && newNamePosition != position) {
             return false;
         }
- 
-        Party replacement = new Party(newName, newSize);
+
         int count = line.size();
         for (int i = 1; i <= count; i++) {
             Party party = line.dequeue();
             if (i == position) {
-                line.enqueue(replacement);
+                // Keep the arrival time and miss mark so a changed party
+                // isn't treated as a new arrival.
+                line.enqueue(new Party(newName, newSize,
+                    party.getArrivalTime(), party.getMissedAt()));
             }
             else {
                 line.enqueue(party);
@@ -51,7 +65,7 @@ public class Waitlist {
         }
         return true;
     }
- 
+
     public Party seatNext() {
         if (isEmpty()) {
             throw new NoSuchElementException("No one is waiting.");
@@ -60,26 +74,57 @@ public class Waitlist {
         seatedCount++;
         return party;
     }
- 
+
     public Party peekNext() {
         if (isEmpty()) {
             throw new NoSuchElementException("No one is waiting.");
         }
         return line.peek();
     }
- 
+
+    public boolean markNoShow() {
+        if (isEmpty()) {
+            throw new NoSuchElementException("No one is waiting.");
+        }
+        Party front = line.dequeue();
+        if (front.hasMissed()) {
+            // Second miss: the party leaves the line.
+            return false;
+        }
+        // First miss: back of the line, marked with the time of the miss.
+        line.enqueue(front.withMissedAt(clock.getAsLong()));
+        return true;
+    }
+
+    public int removeExpiredNoShows() {
+        long now = clock.getAsLong();
+        long limit = NO_SHOW_LIMIT_MINUTES * MILLIS_PER_MINUTE;
+        int count = line.size();
+        int removed = 0;
+        for (int i = 0; i < count; i++) {
+            Party party = line.dequeue();
+            if (party.hasMissed() && now - party.getMissedAt() >= limit) {
+                removed++;
+            }
+            else {
+                line.enqueue(party);
+            }
+        }
+        return removed;
+    }
+
     public boolean isEmpty() {
         return line.isEmpty();
     }
- 
+
     public int size() {
         return line.size();
     }
- 
+
     public boolean isFull() {
         return line.size() >= MAX_PARTIES;
     }
- 
+
     public Party[] getParties() {
         Object[] items = line.toArray();
         Party[] parties = new Party[items.length];
@@ -88,7 +133,7 @@ public class Waitlist {
         }
         return parties;
     }
- 
+
     public int positionOf(String name) {
         if (name == null) {
             return -1;
@@ -102,14 +147,13 @@ public class Waitlist {
         }
         return -1;
     }
- 
+
     public int getSeatedCount() {
         return seatedCount;
     }
- 
+
     public void restartNight() {
         line.clear();
         seatedCount = 0;
     }
 }
- 
