@@ -59,11 +59,20 @@ public class WaitlistController {
     }
 
     /**
-     * Runs the main menu until the program ends.
+     * Runs the main menu until the program ends. Before each command runs,
+     * no-shows whose time is up are removed, so the command sees the
+     * current line.
      */
     public void run() {
         while (running) {
             String command = view.promptCommand();
+
+            int expired = waitlist.removeExpiredNoShows();
+
+            if (expired > 0) {
+                view.showExpired(expired);
+            }
+
             handleCommand(command);
         }
     }
@@ -110,6 +119,10 @@ public class WaitlistController {
 
             case "R":
                 handleRestart();
+                break;
+
+            case "N":
+                handleNoShow();
                 break;
 
             case "E":
@@ -409,6 +422,30 @@ public class WaitlistController {
         Party next = waitlist.peekNext();
 
         view.showNext(next);
+    }
+
+    /**
+     * Marks the party at the front as a no-show. A first miss moves it to
+     * the back of the line; a second miss removes it.
+     */
+    private void handleNoShow() {
+
+        if (waitlist.isEmpty()) {
+            view.showNobodyWaiting();
+            return;
+        }
+
+        Party front = waitlist.peekNext();
+        boolean stillWaiting = waitlist.markNoShow();
+
+        if (stillWaiting) {
+            view.showMovedToBack(front);
+        }
+        else {
+            view.showRemoved(front);
+        }
+
+        view.showCount();
     }
 
     /**

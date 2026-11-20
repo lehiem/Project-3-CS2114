@@ -35,13 +35,30 @@ public class GuiController {
      */
     private void registerActions() {
 
-        view.onAdd(e -> handleAdd());
+        view.onAdd(e -> {
+            removeExpiredNoShows();
+            handleAdd();
+        });
 
-        view.onEdit(e -> handleEdit());
+        view.onEdit(e -> {
+            removeExpiredNoShows();
+            handleEdit();
+        });
 
-        view.onSeat(e -> handleSeat());
+        view.onSeat(e -> {
+            removeExpiredNoShows();
+            handleSeat();
+        });
 
-        view.onPeek(e -> handlePeek());
+        view.onPeek(e -> {
+            removeExpiredNoShows();
+            handlePeek();
+        });
+
+        view.onNoShow(e -> {
+            removeExpiredNoShows();
+            handleNoShow();
+        });
 
         view.onRestart(e -> handleRestart());
 
@@ -49,22 +66,23 @@ public class GuiController {
     }
 
     /**
-     * Converts text to an integer.
-     *
-     * @param text input
-     * @return number or -1 for invalid input
+     * Removes no-shows whose time is up, so each button acts on the
+     * current line, and tells the host if any were removed.
      */
-    public static int parseSize(String text) {
+    private void removeExpiredNoShows() {
 
-        if (text == null) {
-            return -1;
-        }
+        int expired = waitlist.removeExpiredNoShows();
 
-        try {
-            return Integer.parseInt(text.trim());
-        }
-        catch (NumberFormatException e) {
-            return -1;
+        if (expired > 0) {
+            view.refreshDisplay();
+
+            view.showMessage(
+                expired + (expired == 1
+                    ? " no-show was"
+                    : " no-shows were")
+                    + " removed after "
+                    + Waitlist.NO_SHOW_LIMIT_MINUTES + " minutes."
+            );
         }
     }
 
@@ -74,7 +92,8 @@ public class GuiController {
     private void handleAdd() {
 
         String name = view.getPartyName();
-        int size = parseSize(view.getPartySize());
+        int size =
+            WaitlistController.parseSize(view.getPartySize());
 
         if (!Party.isValidName(name)) {
             view.showError(
@@ -185,7 +204,7 @@ public class GuiController {
             newSize = current.getSize();
         }
         else {
-            newSize = parseSize(sizeInput);
+            newSize = WaitlistController.parseSize(sizeInput);
         }
 
         if (!Party.isValidSize(newSize)) {
@@ -280,6 +299,41 @@ public class GuiController {
                 + "\nName: " + next.getName()
                 + "\nGuests: " + next.getSize()
         );
+    }
+
+    /**
+     * Marks the party at the front as a no-show. A first miss moves it to
+     * the back of the line; a second miss removes it.
+     */
+    private void handleNoShow() {
+
+        if (waitlist.isEmpty()) {
+            view.showMessage(
+                "There are no parties waiting."
+            );
+            return;
+        }
+
+        Party front = waitlist.peekNext();
+        boolean stillWaiting = waitlist.markNoShow();
+
+        view.refreshDisplay();
+
+        if (stillWaiting) {
+            view.showMessage(
+                front.getName()
+                    + " didn't answer and moved to the back."
+                    + "\nA second miss, or "
+                    + Waitlist.NO_SHOW_LIMIT_MINUTES
+                    + " minutes, removes them."
+            );
+        }
+        else {
+            view.showMessage(
+                front.getName()
+                    + " missed a second call and was removed."
+            );
+        }
     }
 
     /**

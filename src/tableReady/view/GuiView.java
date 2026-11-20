@@ -46,6 +46,7 @@ public class GuiView extends JFrame {
     private JButton seatButton;
     private JButton peekButton;
     private JButton restartButton;
+    private JButton noShowButton;
     private JButton exitButton;
 
     private final Color navy = new Color(31, 49, 65);
@@ -233,7 +234,7 @@ public class GuiView extends JFrame {
         controls.add(fields, BorderLayout.NORTH);
 
         JPanel buttons = new JPanel(
-            new GridLayout(3, 2, 8, 8)
+            new GridLayout(4, 2, 8, 8)
         );
         buttons.setOpaque(false);
 
@@ -241,6 +242,10 @@ public class GuiView extends JFrame {
         editButton = createButton("Edit Party", navy);
         seatButton = createButton("Seat Next", green);
         peekButton = createButton("Peek Next", navy);
+        noShowButton = createButton(
+            "No-Show",
+            new Color(110, 80, 150)
+        );
         restartButton = createButton(
             "Restart Night",
             new Color(170, 95, 45)
@@ -254,6 +259,7 @@ public class GuiView extends JFrame {
         buttons.add(editButton);
         buttons.add(seatButton);
         buttons.add(peekButton);
+        buttons.add(noShowButton);
         buttons.add(restartButton);
         buttons.add(exitButton);
 
@@ -443,8 +449,12 @@ public class GuiView extends JFrame {
             );
         }
 
+        int waiting = waitlist.size();
+
         waitingLabel.setText(
-            waitlist.size() + " parties waiting"
+            waiting + (waiting == 1
+                ? " party waiting"
+                : " parties waiting")
         );
 
         seatedLabel.setText(
@@ -596,5 +606,9 @@ public class GuiView extends JFrame {
 
     public void onExit(ActionListener listener) {
         exitButton.addActionListener(listener);
+    }
+
+    public void onNoShow(ActionListener listener) {
+        noShowButton.addActionListener(listener);
     }
 }

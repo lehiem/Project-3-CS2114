@@ -1,4 +1,3 @@
-
 package tableReady.view;
 
 import java.io.PrintStream;
@@ -68,6 +67,7 @@ public class TextView {
         out.println("S - Seat next party");
         out.println("C - Change a party");
         out.println("R - Restart night");
+        out.println("N - Mark no-show");
         out.println("E - End night");
         out.print("Choose an option: ");
         out.flush();
