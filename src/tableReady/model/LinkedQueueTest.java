@@ -232,6 +232,39 @@ public class LinkedQueueTest extends student.TestCase {
         assertEquals("Patel", queue.dequeue());
     }
 
+    // ----- interleaved enqueue / dequeue -----
+
+    public void testInterleavedEnqueueDequeueKeepsFifoOrder() {
+        queue.enqueue("Patel");
+        queue.enqueue("Kim");
+        assertEquals(2, queue.size());
+
+        assertEquals("Patel", queue.dequeue());
+        assertEquals(1, queue.size());
+
+        queue.enqueue("Lee");
+        queue.enqueue("Park");
+        assertEquals(3, queue.size());
+        assertEquals("Kim", queue.peek());
+
+        assertEquals("Kim", queue.dequeue());
+        assertEquals("Lee", queue.dequeue());
+        assertEquals(1, queue.size());
+
+        queue.enqueue("Cho");
+        assertEquals(2, queue.size());
+        Object[] items = queue.toArray();
+        assertEquals("Park", items[0]);
+        assertEquals("Cho", items[1]);
+
+        assertEquals("Park", queue.dequeue());
+        assertEquals("Cho", queue.dequeue());
+        assertTrue(queue.isEmpty());
+        assertEquals(0, queue.size());
+        assertTrue(thrownBy(() -> queue.dequeue())
+            instanceof NoSuchElementException);
+    }
+
     // ----- generic reuse (stretch goal stores wait times as Long) -----
 
     public void testWorksWithLong() {
