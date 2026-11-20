@@ -127,7 +127,7 @@ We aren't dropping any stretch goals from our scope.
 
 ### Our 3-minute demo
 
-Timed in a practice run at [m:ss].
+Timed in a practice run.
 
 | Time | What we show |
 | --- | --- |
