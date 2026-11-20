@@ -147,4 +147,121 @@ public class PartyTest extends student.TestCase {
         assertFalse(Party.isValidSize(Integer.MAX_VALUE));
         assertFalse(Party.isValidSize(Integer.MIN_VALUE));
     }
+
+    // ----- hasMissed -----
+
+    public void testHasMissedFalseForNewParty() {
+        assertFalse(new Party("Patel", 4).hasMissed());
+    }
+
+    public void testHasMissedFalseWhenFourArgConstructorUsesNotMissed() {
+        assertFalse(new Party("Patel", 4, 100L, Party.NOT_MISSED).hasMissed());
+    }
+
+    public void testHasMissedTrueAfterWithMissedAt() {
+        assertTrue(new Party("Patel", 4).withMissedAt(5000).hasMissed());
+    }
+
+    // ----- withMissedAt -----
+
+    public void testWithMissedAtReturnsMarkedCopy() {
+        Party original = new Party("Patel", 4, 100L, Party.NOT_MISSED);
+        Party marked = original.withMissedAt(5000);
+        assertEquals("Patel", marked.getName());
+        assertEquals(4, marked.getSize());
+        assertEquals(5000L, marked.getMissedAt());
+        assertEquals(100L, marked.getArrivalTime());
+    }
+
+    public void testWithMissedAtLeavesOriginalUnchanged() {
+        Party original = new Party("Patel", 4);
+        Party marked = original.withMissedAt(5000);
+        assertNotSame(original, marked);
+        assertFalse(original.hasMissed());
+        assertEquals(Party.NOT_MISSED, original.getMissedAt());
+    }
+
+    public void testWithMissedAtCanBeCalledOnAlreadyMissedParty() {
+        Party first = new Party("Patel", 4).withMissedAt(5000);
+        Party second = first.withMissedAt(9000);
+        assertEquals(9000L, second.getMissedAt());
+        assertEquals(5000L, first.getMissedAt());
+    }
+
+    public void testWithMissedAtNegativeThrows() {
+        Party party = new Party("Patel", 4);
+        assertTrue(thrownBy(() -> party.withMissedAt(-1))
+            instanceof IllegalArgumentException);
+        assertTrue(thrownBy(() -> party.withMissedAt(-500))
+            instanceof IllegalArgumentException);
+        assertFalse(party.hasMissed());
+    }
+
+    // ----- getMissedAt -----
+
+    public void testGetMissedAtDefaultsToNotMissed() {
+        assertEquals(-1L, new Party("Patel", 4).getMissedAt());
+    }
+
+    public void testGetMissedAtReturnsValueFromConstructor() {
+        assertEquals(5000L, new Party("Patel", 4, 100L, 5000L).getMissedAt());
+    }
+
+    public void testGetMissedAtAfterWithMissedAtZero() {
+        // 0 is a real time, so it must count as a miss.
+        Party party = new Party("Patel", 4).withMissedAt(0);
+        assertTrue(party.hasMissed());
+        assertEquals(0L, party.getMissedAt());
+    }
+
+    // ----- getArrivalTime -----
+
+    public void testGetArrivalTimeDefaultsToZero() {
+        assertEquals(0L, new Party("Patel", 4).getArrivalTime());
+    }
+
+    // ----- Party(String, int, long, long) -----
+
+    public void testFourArgConstructorStoresAllFields() {
+        Party party = new Party("  Patel ", 4, 100L, 5000L);
+        assertEquals("Patel", party.getName());
+        assertEquals(4, party.getSize());
+        assertEquals(100L, party.getArrivalTime());
+        assertEquals(5000L, party.getMissedAt());
+        assertTrue(party.hasMissed());
+    }
+
+    public void testFourArgConstructorBadNameThrows() {
+        assertTrue(thrownBy(() -> new Party(null, 4, 0L, -1L))
+            instanceof IllegalArgumentException);
+        assertTrue(thrownBy(() -> new Party("", 4, 0L, -1L))
+            instanceof IllegalArgumentException);
+        assertTrue(thrownBy(() -> new Party("   ", 4, 0L, -1L))
+            instanceof IllegalArgumentException);
+        assertTrue(thrownBy(() -> new Party(nameOfLength(31), 4, 0L, -1L))
+            instanceof IllegalArgumentException);
+    }
+
+    public void testFourArgConstructorBadSizeThrows() {
+        assertTrue(thrownBy(() -> new Party("Patel", 0, 0L, -1L))
+            instanceof IllegalArgumentException);
+        assertTrue(thrownBy(() -> new Party("Patel", -3, 0L, -1L))
+            instanceof IllegalArgumentException);
+        assertTrue(thrownBy(() -> new Party("Patel", 13, 0L, -1L))
+            instanceof IllegalArgumentException);
+    }
+
+    public void testFourArgConstructorBadTimesThrow() {
+        assertTrue(thrownBy(() -> new Party("Patel", 4, -1L, -1L))
+            instanceof IllegalArgumentException);
+        assertTrue(thrownBy(() -> new Party("Patel", 4, 0L, -2L))
+            instanceof IllegalArgumentException);
+    }
+
+    public void testFourArgConstructorBoundaryValuesAreAllowed() {
+        Party party = new Party(nameOfLength(30), 12, 0L, 0L);
+        assertEquals(12, party.getSize());
+        assertEquals(0L, party.getMissedAt());
+        assertTrue(party.hasMissed());
+    }
 }
