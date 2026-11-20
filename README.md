@@ -136,7 +136,8 @@ Timed in a practice run.
 | 0:55–1:20 | **N**: Patel doesn't answer and moves to the back; V shows Lee, Kim, Patel |
 | 1:20–1:40 | **N** twice more (Lee, Kim), then **N** on Patel's second miss: Patel is removed |
 | 1:40–2:00 | Bad input: A with size "four", then 500, then 4; S and N on an empty line don't crash |
-| 2:00–3:00 | How the design absorbed the change: `LinkedQueue` untouched, `TextView` changed one line, the 15-minute rule proven by `testExpiredNoShowRemovedBeforeNextCommand` |
+| 2:00–2:30 | Seat the remaining parties then end the night. |
+| 2:30–3:00 | How the design absorbed the change: `LinkedQueue` untouched, `TextView` changed one line, the 15-minute rule proven by `testExpiredNoShowRemovedBeforeNextCommand` |
 
 The 15-minute removal can't be shown live in 3 minutes, so we point to the test that checks it with a fake clock.
 
