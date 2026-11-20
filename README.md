@@ -1,20 +1,39 @@
 # TableReady
 
-Group 96 · Harrison, Kavin, Lehiem · CS 2114 Project 3, Deliverable 3 (First Prototype)
+Group 96 · Harrison, Kavin, Lehiem · CS 2114 Project 3, Deliverable 4 (Second Prototype + Tests)
 
-TableReady is a waitlist for walk-in parties at a restaurant host stand. Parties are seated first-come, first-served from our own linked queue. The code is split into three packages:
+TableReady is a waitlist for walk-in parties at a restaurant host stand. Parties are seated first-come, first-served from our own linked queue. For this deliverable we added our change feature, **no-shows**: when the party at the front doesn't answer, the host marks it, and it moves to the back of the line once. A second miss, or 15 minutes after the first miss, removes it.
 
-- `tableReady.model`: `LinkedQueue<T>`, `Party` and `Waitlist` (the line and every waitlist rule)
+The code is split into three packages:
+
+- `tableReady.model`: `LinkedQueue<T>`, `Party` and `Waitlist` (the line and every waitlist rule), plus their tests
 - `tableReady.view`: `TextView` (terminal screen) and `GuiView` (window)
-- `tableReady.controller`: `WaitlistController` (text menu) and `GuiController` (window buttons); each has its own `main`
+- `tableReady.controller`: `WaitlistController` (text menu) and `GuiController` (window buttons), each with its own `main`, plus `WaitlistControllerTest`
 
-## How to run
+## How to compile and run
 
 **Setup:** Import the project into Eclipse. The tests extend `student.TestCase`, so the `CS2-Support` project must be in your workspace and on the build path (right-click the project → Build Path → Configure Build Path → Projects → Classpath → Add → CS2-Support).
 
-**Run the model (no view needed):** Right-click `src` → Run As → JUnit Test to run every test, or right-click one file, such as `WaitlistTest.java`, → Run As → JUnit Test. The model tests build only `LinkedQueue`, `Party` and `Waitlist`. They never create a view, a `Scanner` or a controller. All 76 model tests pass: `LinkedQueueTest` (27), `PartyTest` (20) and `WaitlistTest` (29).
+**Compile:** Eclipse compiles the project every time you save, as long as Project → Build Automatically is checked. To compile the program from a terminal instead, run this from the project folder (the tests need CS2-Support, so they're left out here):
 
-**Run the thin view (text):** Right-click `WaitlistController.java` → Run As → Java Application, then type commands in the Console:
+```
+javac -d bin src/tableReady/model/LinkedQueue.java src/tableReady/model/Party.java src/tableReady/model/Waitlist.java src/tableReady/view/TextView.java src/tableReady/view/GuiView.java src/tableReady/controller/WaitlistController.java src/tableReady/controller/GuiController.java
+```
+
+Then run the text version with `java -cp bin tableReady.controller.WaitlistController` or the GUI with `java -cp bin tableReady.controller.GuiController`.
+
+**Run the tests:** Right-click `src` → Run As → JUnit Test. All 136 tests pass:
+
+| Test class | Tests | What it covers |
+| --- | --- | --- |
+| `LinkedQueueTest` | 28 | Every queue method, including order after interleaved enqueues and dequeues |
+| `PartyTest` | 36 | Every `Party` method, including the no-show constructor and methods |
+| `WaitlistTest` | 41 | Every `Waitlist` method, including `markNoShow` and `removeExpiredNoShows` with a fake clock |
+| `WaitlistControllerTest` | 31 | Every bad-input case from our scope, plus the N command, fed in as typed text |
+
+The three model test classes build only model objects. They never create a view, a `Scanner` or a controller.
+
+**Run the text version:** Right-click `WaitlistController.java` → Run As → Java Application, then type commands in the Console:
 
 | Key | Command |
 | --- | --- |
@@ -24,130 +43,131 @@ TableReady is a waitlist for walk-in parties at a restaurant host stand. Parties
 | S | Seat the next party |
 | C | Change a waiting party's name or size (press Enter to keep a value) |
 | R | Restart the night (asks y/n first) |
+| N | Mark the front party as a no-show |
 | E | End the night and quit |
 
 Commands work in upper or lower case. Ending input (Ctrl+Z on Windows, Ctrl+D on Mac) also quits cleanly.
 
-**Run the GUI (stretch goal):** Right-click `GuiController.java` → Run As → Java Application. Type a name and size and click **Add Party**, or use **Edit Party** (select a row first), **Seat Next**, **Peek Next**, **Restart Night** and **End Night**. The floor plan on the right is a sample layout only; table occupancy isn't tracked.
+**Run the GUI:** Right-click `GuiController.java` → Run As → Java Application. Type a name and size and click **Add Party**, or use **Edit Party** (select a row first), **Seat Next**, **Peek Next**, **No-Show**, **Restart Night** and **End Night**. The floor plan on the right is a sample layout only; table occupancy isn't tracked.
 
 ## Reflection
 
-### What changed from our specification
+### How did our design absorb the change?
 
-| Area | Spec said | What we built | Why | What prompted it |
-| --- | --- | --- | --- | --- |
-| Classes: packages | Packages `model`, `view` and `controller` | `tableReady.model`, `tableReady.view` and `tableReady.controller` | Our Eclipse project already used a `tableReady` package, so we split it into three subpackages. Three packages make the model/view line easy to check: nothing in `tableReady.model` imports from the other two. | Project setup. We considered keeping one package and chose three after asking GenAI which was better. |
-| Classes: build order | Each member builds their classes on their own branch | We first committed skeletons of `LinkedQueue` and `Party`, with the spec's exact signatures and empty method bodies, so `Waitlist` could compile before they were written | Without them, `Waitlist` couldn't compile, and nobody could build on the model until Harrison was done | 19 "is undefined" compile errors in `Waitlist.java` |
-| Classes: GUI built early | The GUI (`GuiView`, `GuiController`) was a stretch goal for after the MVP | Both GUI classes are built now, next to the text version. `TextView` also already has the no-show and wait-quote messages from our stretch goals. | A second view running on the same, unchanged `Waitlist` shows the model doesn't depend on any one view | The text version was finished ahead of schedule, so Lehiem started the GUI stretch goal early |
-| Signatures: GUI wiring | `GuiView.setController(GuiController)`; public `GuiController.onAdd(String, String)`, `onChange`, `onSeat`, `onPeek` and `onRestart`; `GuiView` has the same `show...` methods as `TextView`, and the GUI reuses `WaitlistController.parseSize` | `GuiView` has `onAdd(ActionListener)`, `onEdit`, `onSeat`, `onPeek`, `onRestart` and `onExit`, which the controller uses to register private handlers. Messages go through `showMessage`, `showError` and `refreshDisplay`. Seating asks for a Yes/No first, there's an End Night button, and `GuiController` has its own copy of `parseSize`. | Registering listeners keeps every Swing button inside `GuiView`, so `GuiController` never touches a `JButton` | While building the GUI, Lehiem found that Swing buttons take an `ActionListener`, so registering listeners fit Swing better than the spec's `onAdd(String, String)` plan |
-| Signatures: GUI pop-ups | Every window belongs to the view | `GuiView` gained `promptNewName(String)`, `promptNewSize(int)` and `confirmSeat(Party)`. Our first version had `GuiController` opening those three pop-ups itself with `JOptionPane`. | Opening windows and reading input is view work, so with the pop-ups inside `GuiController`, it spanned two MVC roles. Our spec says no class does that. | A GenAI review of the GUI code |
-| Tests: setup | Test classes `LinkedQueueTest`, `PartyTest` and `WaitlistTest`; no location given | Test classes sit in `tableReady.model` next to the classes they test and extend `student.TestCase` | Same setup as our labs and Project 2, and the same package means no extra imports | 70 "student cannot be resolved" errors until we added CS2-Support to the build path |
-| Tests: cases | One normal and one bad-input case per public method | 76 tests in all. `WaitlistTest` (29) adds checks that `editParty` keeps everyone's place, that `getParties()` returns a copy, that adding works after the line empties, and that two waitlists don't share a line. `LinkedQueueTest` (27) adds a check that the queue also works as a `LinkedQueue<Long>`. | The copy test protects our model/view boundary, and the empty-then-add tests in `WaitlistTest` and `LinkedQueueTest` cover scope unknown 1. The `Long` test covers the wait-quote stretch goal, which reuses `LinkedQueue` for wait times. | For `WaitlistTest`, a GenAI review of our spec, which pointed out that the test plan never tested a stale `back` reference. For `LinkedQueueTest`, our spec's class design, which says the wait-quote stretch goal reuses `LinkedQueue<Long>`. |
+No-shows touched six of our seven classes, every one of them where our D3 prediction said it would. `LinkedQueue` didn't change at all, and all 76 tests from Deliverable 3 still pass without edits.
 
-**Unchanged:** `LinkedQueue`, `Party`, `Waitlist`, `TextView` and `WaitlistController` match the spec's Method signatures section, and the text version handles every case in the spec's Where validation lives table: mistyped and blank commands; blank, all-space and 5,000-character names; sizes like "four", 0, 500 and 99999999999; duplicates like "patel " after "Patel"; seating, peeking or changing with nobody waiting; renaming to another party's name; the y/n restart check; the 50-party cap; and Ctrl+D at any prompt. None of them crash.
+| Class | Our D3 prediction | What actually changed | Matched? |
+| --- | --- | --- | --- |
+| `Party` (model) | New field `missedAt`, the 4-argument constructor, `hasMissed()` and `withMissedAt(long)` | All of those, plus the `arrivalTime` field and `getArrivalTime()` that the 4-argument constructor needs, and **`getMissedAt()`**, which we didn't predict. The 2-argument constructor now calls the 4-argument one with `0` and `-1`, and the new constructor also rejects negative times. | Yes, plus one extra method |
+| `Waitlist` (model) | `Waitlist(LongSupplier clock)`, `Waitlist()` storing the real clock, `markNoShow()`, `removeExpiredNoShows()`, and `editParty()` keeping the miss mark | Exactly those | Yes |
+| `WaitlistController` (controller) | `handleCommand()` gains N, a new `handleNoShow()`, and `run()` removes expired no-shows before each command | Exactly those | Yes |
+| `TextView` (view) | Only `promptCommand()` changes; the no-show messages already existed | Only `promptCommand()` changed | Yes |
+| `GuiController` (controller) | A new `handleNoShow()`, registered in `registerActions()`, and expired no-shows removed at the start of each button handler | Exactly those. The expiry check is one private method, `removeExpiredNoShows()`, that each button's listener calls first. | Yes |
+| `GuiView` (view) | A No-show button and `onNoShow(ActionListener)` | Exactly those | Yes |
+| `LinkedQueue` (model) | Should not change | Didn't change | Yes |
 
-### Did the model really stand alone?
+The methods we said should not change didn't change because of no-shows: `addParty`, `seatNext`, `peekNext`, `getParties`, `positionOf`, `restartNight` and `TextView.showWaitlist()`. `GuiView.refreshDisplay()` did change, but only for a D3 leftover ("1 party waiting" instead of "1 parties waiting"), not because of no-shows.
 
-Yes. Nothing in `tableReady.model` imports anything from `tableReady.view` or `tableReady.controller`; the only import is Java's `NoSuchElementException`. `Waitlist` uses only `LinkedQueue` and `Party`, and the model tests never create a view, a `Scanner` or a controller. Nothing had to move across the model/view line to make the model run, and both views run on the same `Waitlist` with no model changes. The only thing that crossed the wrong way was in the GUI: the first `GuiController` opened its own pop-ups, so we moved them into `GuiView` (see the GUI pop-ups row above).
+**What surprised us:**
 
-### What happened to our unknowns
+- **`Party` needed `getMissedAt()`.** Our spec only had `hasMissed()`, but `removeExpiredNoShows()` has to know *when* a party missed to tell whether 15 minutes have passed, and `editParty()` has to copy the time over.
+- **`TextView` needed almost nothing.** Its no-show messages (`showMovedToBack`, `showRemoved`, `showExpired`) were written in D3, so adding the feature to the text view was one menu line.
+- **When to check for expired no-shows mattered.** We check *after* the host types a command and *before* it runs, not before the menu prints. Otherwise, a host who leaves the menu open for 20 minutes could seat a party that should already have been removed.
 
-| Scope unknown | Status | What we found |
-| --- | --- | --- |
-| 1. How does `dequeue` reset the `back` reference when the last party leaves? | Figured out | When `dequeue` removes the last node, it sets `back` to `null` as well as `front`. Two passing tests check it: `LinkedQueueTest.testEnqueueAfterQueueEmptiedAgain` and `WaitlistTest.testAddAfterLineEmpties`. Each empties the line, adds again, and checks that the new item is next. |
-| 2. Should the model give the view a copy of the line? | Figured out | Yes. `Waitlist.getParties()` returns a new `Party[]`, and a `Party` can't be changed after it's made, so neither view can alter the real line. `TextView.showWaitlist()` and `GuiView.refreshDisplay()` both read the line this way, and `testGetPartiesReturnsCopy` checks it. |
-| 3. Should `dequeue` on an empty line throw or return `null`, and who handles it? | Figured out | It throws `NoSuchElementException`, and so do `Waitlist.seatNext()` and `peekNext()`; our tests check all three. Both controllers check `isEmpty()` first, so seating or peeking with nobody waiting shows a "No one is waiting" message instead of crashing. |
-| 4. How do we JUnit-test `Scanner` input without typing? | Still open | `TextView` takes its `Scanner` and `PrintStream` in its constructor, so a test can pass in `new Scanner("A\nPatel\n4\nE\n")`, and running the program with typed input piped in works. We haven't written `WaitlistControllerTest` yet, so it stays open until that test runs. |
+### Did the change cross the model/view line?
+
+No. Neither view had to learn anything new about the model. `TextView` and `GuiView` still read only `getParties()`, `size()` and `getSeatedCount()`, and the no-show messages only use `Party.getName()`, which they already used. Nothing in `tableReady.model` imports from the view or controller packages. The new model logic (marking, requeuing, the 15-minute rule) lives only in `Party` and `Waitlist`, and both views get the right line just by redrawing from `getParties()`.
+
+The change did ripple further than it needed to in one place. Because we have two controllers, the no-show logic had to be written twice: `handleNoShow()` and the expiry check exist in both `WaitlistController` and `GuiController`. That's duplication, not a boundary leak, but it's the cost we'd most like to remove (see the last part of this section).
+
+### What changed from our D3 plan?
+
+| Area | D3 plan | What we did | Why |
+| --- | --- | --- | --- |
+| Signatures | `Party` would have `hasMissed()` and `withMissedAt(long)` | Added `getMissedAt()` too | `removeExpiredNoShows()` and `editParty()` need the time of the miss, not just whether it happened |
+| Features | Wait-time quotes committed as a stretch goal | Moved to the final build | To spend D4 on getting no-shows and its tests right |
+| Signatures | The GUI would have its own copy of `parseSize` (a D3 leftover) | `GuiController` now calls `WaitlistController.parseSize`, and its copy is gone | The size rule's parsing now lives in one place |
+| Validation | New bad input from the feature: marking a no-show when nobody is waiting | N and No-Show show "No one is waiting" / "There are no parties waiting"; `markNoShow()` throws `NoSuchElementException` if called anyway. `Party` also rejects negative arrival and miss times. | Matches how Seat and Peek already handle an empty line, and keeps a bad time from ever entering the model |
+| Tests | `WaitlistControllerTest` was a D3 Next Steps item | Written: 31 tests, one per bad-input case from our scope plus the N command | It also closes scope unknown 4: feeding `TextView` a `Scanner` built from a `String` works |
+| Tests | No interleaved queue test | `testInterleavedEnqueueDequeueKeepsFifoOrder` checks FIFO order across several rounds of enqueues and dequeues, then that the emptied queue rejects `dequeue` | Checks that `front` and `back` stay correct, not just simple add-all-then-remove-all order |
 
 ### What doesn't work yet
 
-- There's no `WaitlistControllerTest`, so the text menu and both controllers are only checked by running them, not by JUnit tests.
-- The GUI has no automated tests; we check it by clicking through every button.
-- The GUI's count says "1 parties waiting" when one party is waiting.
-- `GuiController` has its own copy of `parseSize` instead of reusing `WaitlistController.parseSize`, so the size rule's parsing lives in two places.
-- Our change feature and stretch goals (no-shows and wait-time quotes) aren't built yet; they're planned for Deliverable 4 below.
+- Neither the GUI table nor the text list (V) shows which parties have already missed a call. The host only sees it in the message when it happens.
+- Expired no-shows are removed when the host types a command or clicks a button, not on a timer. An expired party stays on the screen until the next action.
+- The GUI has no automated tests. Its handlers are private and open pop-up windows, so we check it by clicking through every button. All its rules come from model methods and `WaitlistController.parseSize`, which are tested.
+- Wait-time quotes aren't built yet (planned for the final build).
+
+### What design change would make the next feature cheaper?
+
+**A shared controller class.** Today, every feature is written twice: `WaitlistController` and `GuiController` each check the name, size, duplicates and the 50-party cap when adding, each have their own `handleNoShow()`, and each remove expired no-shows. If both controllers called one shared class, say `WaitlistActions`, with methods like `addParty(name, sizeText)` and `noShow()` that return a result (added, invalid size, duplicate, moved to back, removed...), each controller would only turn that result into its own message or pop-up. The next feature, wait quotes, would then be written and tested once instead of twice, and the GUI's logic would become testable without opening any windows.
 
 ## Next Steps
 
-### What's left to finish the MVP, in order
-
-Every MVP feature works in both views. What's left is testing and small fixes:
+### What's left for the final build, in order
 
 | # | Item | Owner |
 | --- | --- | --- |
-| 1 | Write `WaitlistControllerTest`, feeding the controller a `Scanner` built from a `String`, to close scope unknown 4 | Lehiem |
-| 2 | Make `GuiController` call `WaitlistController.parseSize` and delete its own copy | Lehiem |
-| 3 | Fix the GUI count to say "1 party waiting" | Lehiem |
-| 4 | Click through every GUI button and every bad-input case once more after the fixes | Everyone |
-
-### Our change feature: no-shows
-
-When the front party doesn't answer, the host picks **N** in the text version or clicks a **No-show** button in the GUI. That party moves to the back of the line once. A second miss removes it right away, and a party that still hasn't been seated 15 minutes after its miss is removed too. This adds model state (when a party missed its call) and model logic (requeue, then remove), and the host reaches it through both controllers and views.
-
-**Prediction: what it will touch**
-
-- `Party` (model): a new field `missedAt`; the spec's new constructor `Party(String name, int size, long arrivalTime, long missedAt)`, shared with wait quotes; and new methods `hasMissed()` and `withMissedAt(long time)`.
-- `Waitlist` (model): a new constructor `Waitlist(LongSupplier clock)` so tests can fake the time; `Waitlist()` stores the real clock; new methods `markNoShow()` and `removeExpiredNoShows()`; and a change to `editParty()` so a changed party keeps its miss mark.
-- `WaitlistController` (controller): `handleCommand()` gains **N**, a new `handleNoShow()` handles it, and `run()` calls `removeExpiredNoShows()` before each command.
-- `TextView` (view): only `promptCommand()` changes, to list **N** again. `showMovedToBack(Party)`, `showRemoved(Party)` and `showExpired(int)` already exist.
-- `GuiController` (controller): a new private `handleNoShow()`, registered in `registerActions()`, and a call to `removeExpiredNoShows()` at the start of each button handler.
-- `GuiView` (view): a new **No-show** button and a new `onNoShow(ActionListener)` method.
-
-**What our design says should not change**
-
-- `LinkedQueue`: no-shows only need `enqueue` and `dequeue`, which already exist.
-- The other `Waitlist` methods (`addParty`, `seatNext`, `peekNext`, `getParties`, `positionOf`, `restartNight`) and every existing method signature. All 76 current tests should keep passing untouched.
-- `TextView.showWaitlist()` and `GuiView.refreshDisplay()`: both already redraw the line from `getParties()`, so a party moved to the back shows up correctly with no changes.
+| 1 | Wait-time quotes in the model: `recentWaits` (a `LinkedQueue<Long>`), `addParty` stamping the arrival time, `seatNext` recording the wait, `restartNight` clearing the waits, and `quoteWaitMinutes()`, plus their `WaitlistTest` cases | Kavin |
+| 2 | Show the quote after adding a party, in both views and controllers, plus `WaitlistControllerTest` cases | Lehiem |
+| 3 | Mark missed parties in the text list and the GUI table, for example "Patel (missed)" | Lehiem |
+| 4 | `PartyTest` and `LinkedQueueTest` review, and any `Party` changes quotes need | Harrison |
+| 5 | If time allows: the shared controller class from the Reflection | Kavin, Lehiem |
+| 6 | Final README, run every test, practice the demo | Everyone |
 
 ### Stretch goals
 
-| Stretch goal | Decision | Why |
-| --- | --- | --- |
-| No-shows | Committing | It's our change feature |
-| Wait-time quotes | Committing | It's small. It reuses our `LinkedQueue` as `LinkedQueue<Long>` for the last 5 waits, and needs `Party.arrivalTime`, `Waitlist.quoteWaitMinutes()`, and changes to `addParty`, `seatNext` and `restartNight`. `TextView.showQuote(int)` already exists; the GUI's add message needs the quote added. |
-| GUI screen | Already built | Built in this prototype (see Reflection). We'll keep it working as we add the other two goals. |
-
-We aren't dropping any of the stretch goals from our scope.
-
-### New tests we'll need
-
-| Test file | New cases |
+| Stretch goal | Decision |
 | --- | --- |
-| `PartyTest` | `hasMissed()` is false for a new party. `withMissedAt(5000)` returns a marked copy with the same name and size, and the original party is unchanged. |
-| `WaitlistTest` | `markNoShow()`: the first miss moves the party to the back; a second miss removes it; an empty waitlist throws `NoSuchElementException`. `removeExpiredNoShows()` with a fake clock: removes a party at 15 minutes, keeps it at 14, and returns 0 when empty. `editParty()` keeps a party's miss mark. `quoteWaitMinutes()`: waits of 10, 20 and 30 minutes give 20; waits of 12 and 14 give 15 (rounded); -1 before anyone is seated and after `restartNight()`; only the last 5 waits count. |
-| `WaitlistControllerTest` | The MVP commands and bad-input cases from item 1 above. **N** with nobody waiting shows "No one is waiting." **N** moves the front party to the back. Adding a party shows a quote, or "No estimate yet." before anyone is seated. |
+| No-shows | Done (our change feature) |
+| GUI screen | Done (built in Deliverable 3, extended with No-Show here) |
+| Wait-time quotes | Committing, for the final build |
+
+We aren't dropping any stretch goals from our scope.
+
+### Our 3-minute demo
+
+Timed in a practice run at [m:ss].
+
+| Time | What we show |
+| --- | --- |
+| 0:00–0:20 | What TableReady is, and the green bar: all 136 tests passing |
+| 0:20–0:55 | Text version: add Patel (4), Lee (2) and Kim (3), then V to view the line |
+| 0:55–1:20 | **N**: Patel doesn't answer and moves to the back; V shows Lee, Kim, Patel |
+| 1:20–1:40 | **N** twice more (Lee, Kim), then **N** on Patel's second miss: Patel is removed |
+| 1:40–2:00 | Bad input: A with size "four", then 500, then 4; S and N on an empty line don't crash |
+| 2:00–2:35 | GUI: add two parties, click **No-Show**, and watch the front party move to the bottom of the table |
+| 2:35–3:00 | How the design absorbed the change: `LinkedQueue` untouched, `TextView` changed one line, the 15-minute rule proven by `testExpiredNoShowRemovedBeforeNextCommand` |
+
+The 15-minute removal can't be shown live in 3 minutes, so we point to the test that checks it with a fake clock.
 
 ### Who does what
 
-| Item | Owner |
-| --- | --- |
-| `Party` no-show and quote fields and methods, plus their `PartyTest` cases | Harrison |
-| `Waitlist` clock constructor, `markNoShow`, `removeExpiredNoShows`, `quoteWaitMinutes`, and the `editParty`, `addParty`, `seatNext` and `restartNight` changes, plus their `WaitlistTest` cases | Kavin |
-| The **N** command and No-show button in both controllers and views, the quote message after adding, plus `WaitlistControllerTest` | Lehiem |
-| Keeping this README up to date | Everyone |
+Owners are listed in the "What's left" table above. Kavin keeps this README up to date.
 
 ## Attribution
 
 | File | Who | How |
 | --- | --- | --- |
-| `LinkedQueue.java` | Harrison, Kavin | Kavin committed the skeleton (signatures and empty methods). Harrison wrote every method and its Javadoc. |
-| `Party.java` | Harrison, Kavin | Kavin committed the skeleton. Harrison wrote every method and its Javadoc. |
-| `Waitlist.java` | Kavin | Kavin wrote it from our spec's method signatures. Kavin reviewed to the spec and ran `WaitlistTest` on Harrison's `LinkedQueue` and `Party`; all 29 tests pass. |
-| `TextView.java` | Lehiem, Kavin | Lehiem wrote it. Kavin removed the "N - Mark no-show" menu line, since **N** isn't built yet. |
-| `WaitlistController.java` | Lehiem, Kavin | Lehiem wrote it. Kavin replaced the template class comment with a real summary. |
-| `GuiView.java` | Lehiem, Kavin | Lehiem wrote it. Kavin added `promptNewName`, `promptNewSize` and `confirmSeat` to move the pop-ups out of `GuiController`. |
-| `GuiController.java` | Lehiem, Kavin | Lehiem wrote it. Kavin changed its three pop-up calls to use the new `GuiView` methods and removed its `JOptionPane` import. |
-| `LinkedQueueTest.java` | Harrison | Wrote all 27 tests. Kavin reviewed it and fixed one test. |
-| `PartyTest.java` | Harrison | Wrote all 20 tests |
-| `WaitlistTest.java` | Kavin | Kavin wrote it from our spec's test plan. Kavin reviewed it with the spec and ran it. |
+| `LinkedQueue.java` | Harrison, Kavin | D3: Kavin committed the GenAI-generated skeleton; Harrison wrote every method. D4: unchanged. |
+| `Party.java` | Harrison, Kavin | D3: Harrison wrote it. D4: Kavin committed a GenAI-generated skeleton of the no-show methods so `Waitlist` could compile; Harrison replaced it with the real fields, 4-argument constructor and four methods. |
+| `Waitlist.java` | Kavin | Kavin wrote it (D3) and its no-show methods (D4) from our spec. Claude reviewed and tested it. |
+| `TextView.java` | Lehiem, Kavin | D3: Lehiem wrote it. D4: Kavin added the N menu line |
+| `WaitlistController.java` | Lehiem, Kavin | D3: Lehiem wrote it. D4: Kavin added the N command, `handleNoShow()` and the expiry check in `run()` |
+| `GuiView.java` | Lehiem, Kavin | D3: Lehiem wrote it. D4: Kavin added the No-Show button, `onNoShow()` and the "1 party" fix. |
+| `GuiController.java` | Lehiem, Kavin | D3: Lehiem wrote it. D4: Kavin added `handleNoShow()`, the expiry check and the switch to `WaitlistController.parseSize`. |
+| `LinkedQueueTest.java` | Harrison, Kavin | Harrison wrote all 28 tests, including the D4 interleaved-order test. Kavin fixed `testWorksWithLong` in D3 (GenAI-assisted). |
+| `PartyTest.java` | Harrison | Harrison wrote all 36 tests, including the 16 no-show tests added in D4. |
+| `WaitlistTest.java` | Kavin | Kavin wrote it (D3) and the 12 no-show tests (D4) from our test plan. |
+| `WaitlistControllerTest.java` | Kavin | New in D4. Kavin wrote all 31 tests from our scope's bad-input cases. Claude reviewed and ran them. |
+
 
 ## GenAI note
 
-We used Claude for this prototype:
+We used Claude for this deliverable:
 
-- **Planning:** we gave it our spec and the Deliverable 3 instructions and rubric, and asked if our plan to build and division of work would work properly and made sense.
-- **Project setup:** it walked us through adding a `.gitignore` so compiled `bin/` files stay out of GitHub.
-- **Skeletons:** it helped make sure compile-ready skeletons of the MVP classes with our spec's exact signatures and empty methods. We committed the `LinkedQueue` and `Party` skeletons so `Waitlist` could compile before Harrison's versions were ready.
-- **`Waitlist` and `WaitlistTest`:** it checked them by running the tests against working stand-in versions of `LinkedQueue` and `Party`, which we did not commit, and against `Waitlist` with bugs added on purpose, which the tests caught. Kavin reviewed both files and ran `WaitlistTest` on Harrison's code; all 29 tests pass.
-- **Checking Harrison's code:** it compared `LinkedQueue` and `Party` with our spec and ran all three test classes together. It also broke `LinkedQueue` and `Party` on purpose in nine ways, such as a stale `back` reference, a missing `size--` and a name that isn't trimmed, to check that `LinkedQueueTest` and `PartyTest` catch real bugs. They caught all nine.
-- **Checking Lehiem's code:** it compiled the whole project and ran the text version through the MVP path and every bad-input case from our scope using typed input, and nothing crashed. It found the unbuilt **N** command on the menu and the template class comment, which Kavin fixed. It also found that `GuiController` opened three pop-ups itself, and wrote the fix that moved them into `GuiView`, which Kavin applied.
+- **Planning:** we gave it our D3 README, our spec and the D4 instructions and rubric, and made sure we were doing the correct work we had left like said in the previous deliverable's READme.
+- **Code:** it helped with the D4 no-show code in `Waitlist`, the N command and No-Show button in both controllers and views, and the two D3 leftovers, checking with our prediction in our D3 Next Steps. It also generated the `Party` skeleton Kavin committed so `Waitlist` could compile; Harrison wrote the real `Party` code.
+- **Tests:** it helped write and check the 12 new `WaitlistTest` cases and all of `WaitlistControllerTest`.
+- **Checking:** it compiled the project for Java 8 and ran every test with a stand-in for `student.TestCase` that rejects numbers passed as objects, the way CS2-Support does. It broke the new `Waitlist` and controller code on purpose in 16 ways, and the tests caught every one. It also checked Harrison's `Party` against what `Waitlist` calls and broke it in 8 ways; his `PartyTest` caught every one. It ran the text version through the MVP path, no-shows and every bad-input case, and clicked through the GUI on a virtual screen. Kavin then ran all 136 tests in Eclipse with the real CS2-Support library and got a green bar.
+- **This README:** it checked over the README from our code, our D3 plan and the rubric, after Kavin made it.
