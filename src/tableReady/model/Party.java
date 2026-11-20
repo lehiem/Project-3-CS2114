@@ -4,17 +4,20 @@ package tableReady.model;
  * One walk-in party: an unchangeable name and size, plus the rules for what
  * makes a valid name and size.
  *
- * Stretch goals (arrival time, missed-call mark, withMissedAt, and the
- * four-argument constructor) are intentionally not here yet.
+ * Also tracks arrival time and a missed-call mark for the no-show feature.
  */
 public class Party {
 
     private static final int MIN_SIZE = 1;
     private static final int MAX_SIZE = 12;
     private static final int MAX_NAME_LENGTH = 30;
+    /** Value of missedAt for a party that has not missed a call. */
+    public static final long NOT_MISSED = -1;
 
     private final String name;
     private final int size;
+    private final long arrivalTime; // when the party joined the line
+    private final long missedAt; // time of missed call, or NOT_MISSED
 
     /**
      * Creates a party with the trimmed name.
@@ -27,37 +30,83 @@ public class Party {
      *             if the name or size is invalid
      */
     public Party(String name, int size) {
+        this(name, size, 0, NOT_MISSED);
+    }
+
+    // ----- No-show support (replaces the old stub block) -----
+
+    /**
+     * Creates a party with an arrival time and a missed-call mark.
+     *
+     * @param name
+     *            the party's name (1-30 characters after trimming)
+     * @param size
+     *            the party's size (1-12)
+     * @param arrivalTime
+     *            when the party joined the line
+     * @param missedAt
+     *            when the party missed its call, or NOT_MISSED (-1)
+     * @throws IllegalArgumentException
+     *             if the name or size is invalid, if arrivalTime is negative,
+     *             or if missedAt is less than NOT_MISSED
+     */
+    public Party(String name, int size, long arrivalTime, long missedAt) {
         if (!isValidName(name)) {
             throw new IllegalArgumentException("invalid name");
         }
         if (!isValidSize(size)) {
             throw new IllegalArgumentException("invalid size");
         }
+        if (arrivalTime < 0) {
+            throw new IllegalArgumentException("invalid arrival time");
+        }
+        if (missedAt < NOT_MISSED) {
+            throw new IllegalArgumentException("invalid missed time");
+        }
         this.name = name.trim();
         this.size = size;
+        this.arrivalTime = arrivalTime;
+        this.missedAt = missedAt;
     }
 
-    // TODO: real no-show versions
-    public Party(String name, int size, long arrivalTime, long missedAt) {
-        this(name, size);
-    }
-
+    /**
+     * @return the time this party joined the line
+     */
     public long getArrivalTime() {
-        return 0;
+        return arrivalTime;
     }
 
+    /**
+     * @return the time of this party's missed call, or NOT_MISSED (-1)
+     */
     public long getMissedAt() {
-        return -1;
+        return missedAt;
     }
 
+    /**
+     * @return true if this party has missed a call
+     */
     public boolean hasMissed() {
-        return false;
+        return missedAt != NOT_MISSED;
     }
 
+    /**
+     * Parties are unchangeable, so this returns a marked copy.
+     *
+     * @param time
+     *            the time of the missed call
+     * @return a new Party with the same name, size and arrival time, marked
+     *         as missed at time
+     * @throws IllegalArgumentException
+     *             if time is negative
+     */
     public Party withMissedAt(long time) {
-        return this;
+        if (time < 0) {
+            throw new IllegalArgumentException("invalid missed time");
+        }
+        return new Party(name, size, arrivalTime, time);
     }
-    
+
     /**
      * @return the trimmed name
      */
